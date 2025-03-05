@@ -6,8 +6,8 @@ streamlit-tags==1.2.8
 # Computer Vision
 opencv-python-headless==4.8.1.78
 easyocr==1.7.1
-torch==2.2.0  # Updated Torch version
-torchvision==0.15.2
+torch==2.2.0
+torchvision==0.17.0  # Fixed version
 torchtext==0.15.2
 pillow==10.0.1
 
