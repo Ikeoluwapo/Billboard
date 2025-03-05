@@ -1,9 +1,12 @@
+numpy
+opencv-python
+torch
+
 streamlit>=1.25.0
 streamlit-image-select
 streamlit-tags==1.2.8
-opencv-python-headless==4.8.1.78
+opencv-python-headless
 easyocr==1.7.1
-torch==2.2.0
 torchvision==0.17.0
 torchtext==0.16.2
 pillow==10.0.1
