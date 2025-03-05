@@ -1,26 +1,51 @@
-# Core libraries
-numpy==2.2.3
-opencv-python==4.11.0.86
-torch==2.6.0
-torchvision==0.17.0
-torchtext==0.16.2
-pillow==10.0.1
-nltk==3.8.1
-
-# Streamlit and related libraries
+# Streamlit for building the web application
 streamlit>=1.25.0
-streamlit-image-select==0.6.0
+
+# Additional Streamlit-related libraries
+streamlit-image-select
 streamlit-tags==1.2.8
 
-# OCR and Computer Vision
-opencv-python-headless==4.11.0.86
+# OpenCV for image processing
+opencv-python-headless==4.8.1.78
+
+# OCR library
 easyocr==1.7.1
 
-# NLP and related
+# PyTorch for deep learning
+torch==2.2.0
+torchvision==0.17.0
+torchtext==0.16.2
+
+# Image processing and NLP
+pillow==10.0.1
+nltk==3.8.1
 spacy==2.3.5
-spacy-models==2.3.1
-thinc==7.4.6
-preshed==3.0.9
-murmurhash==1.0.12
+
+# Spacy language model
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.3.1/en_core_web_sm-2.3.1.tar.gz#sha256=06c80936324012d1223291d2af41a5229e746dc2dee8fe31a532666ee3d18aaa
+
+# Rich for enhanced logging
+rich>=10.14.0
+
+# Markdown parsing
+markdown-it-py>=2.2.0
+
+# Syntax highlighting
+pygments>=2.13.0
+
+# URL handling by markdown-it-py
+mdurl~=0.1
+
+# Packaging tools
+setuptools
+
+# Cython for optimized compilation
 cython>=0.25
-setuptools>=75.8.2
+
+# SpaCy dependencies
+cymem<2.1.0,>=2.0.2
+preshed<3.1.0,>=3.0.2
+murmurhash<1.1.0,>=0.28.0
+
+# Thinc for machine learning
+thinc<7.5.0,>=7.4.1
