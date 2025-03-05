@@ -1,25 +1,26 @@
-numpy
-opencv-python
-torch
-
-streamlit>=1.25.0
-streamlit-image-select
-streamlit-tags==1.2.8
-opencv-python-headless
-easyocr==1.7.1
+# Core libraries
+numpy==2.2.3
+opencv-python==4.11.0.86
+torch==2.6.0
 torchvision==0.17.0
 torchtext==0.16.2
 pillow==10.0.1
 nltk==3.8.1
+
+# Streamlit and related libraries
+streamlit>=1.25.0
+streamlit-image-select==0.6.0
+streamlit-tags==1.2.8
+
+# OCR and Computer Vision
+opencv-python-headless==4.11.0.86
+easyocr==1.7.1
+
+# NLP and related
 spacy==2.3.5
-en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.3.1/en_core_web_sm-2.3.1.tar.gz#sha256=06c80936324012d1223291d2af41a5229e746dc2dee8fe31a532666ee3d18aaa
-rich>=10.14.0
-markdown-it-py>=2.2.0
-pygments>=2.13.0
-mdurl~=0.1
-setuptools
+spacy-models==2.3.1
+thinc==7.4.6
+preshed==3.0.9
+murmurhash==1.0.12
 cython>=0.25
-cymem<2.1.0,>=2.0.2
-preshed<3.1.0,>=3.0.2
-murmurhash<1.1.0,>=0.28.0
-thinc<7.5.0,>=7.4.1
+setuptools>=75.8.2
