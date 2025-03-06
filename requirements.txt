@@ -1,23 +1,7 @@
 streamlit>=1.25.0
-streamlit-image-select
-streamlit-tags==1.2.8
-opencv-python-headless==4.8.1.78
-easyocr==1.7.1
-torch==2.2.0
-torchvision==0.17.0
-torchtext==0.16.2
-pillow==10.0.1
-nltk==3.8.1
-spacy==2.3.5
-en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.3.1/en_core_web_sm-2.3.1.tar.gz#sha256=06c80936324012d1223291d2af41a5229e746dc2dee8fe31a532666ee3d18aaa
-rich>=10.14.0
-markdown-it-py>=2.2.0
-pygments>=2.13.0
-mdurl~=0.1
-setuptools
-cython>=0.25
-cymem<2.1.0,>=2.0.2
-preshed<3.1.0,>=3.0.2
-murmurhash<1.1.0,>=0.28.0
-thinc<7.5.0,>=7.4.1
-msvcbuildtools; platform_system == "Windows"  # If using Windows, install the build tools for compiling C e
+opencv-python-headless>=4.8.1.78
+numpy>=1.23.5
+Pillow>=10.0.1
+torch>=2.2.0
+torchvision>=0.17.0
+easyocr>=1.7.1
