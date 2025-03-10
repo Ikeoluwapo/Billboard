@@ -1,3 +1,12 @@
+import asyncio
+import sys
+
+if sys.platform == "win32" and sys.version_info >= (3, 8):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+if not asyncio.get_event_loop().is_running():
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import os
 os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"  # Disable problematic watcher
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Explicitly disable GPU
@@ -10,44 +19,52 @@ import torch
 from torchvision.models import resnet18, ResNet18_Weights
 import easyocr
 
+# Disable problematic torch class monitoring
+import torch
+from streamlit.runtime.legacy_caching import caching
+
+def _filter_torch_paths(module):
+    if "torch.classes" in str(module):
+        return []
+    return list(module.__path__._path) if hasattr(module.__path__, '_path') else []
+
+caching._get_module_paths = _filter_torch_paths
+
 # Cache weights download for 24 hours
-@st.experimental_singleton
+@st.cache_data(show_spinner=False, ttl=24*3600)  # Cache for 24 hours
 def get_resnet_weights():
-    return ResNet18_Weights.IMAGENET1K_V1
     
 @st.cache_resource
 def load_models():
     device = torch.device('cpu')
     torch.set_default_device(device)
 
-    # Pre-download ResNet weights
-    with st.spinner('Downloading vision model (1.2GB)...'):
+    # Pre-download ResNet weights with progress
+    with st.spinner('🔧 Loading vision model (1.2GB)...'):
         try:
-            # Get weights metadata
             weights = ResNet18_Weights.IMAGENET1K_V1
-            
-            # Pre-load weights file explicitly
-            model_path = torch.hub.load_state_dict_from_url(
-                weights.url,
-                model_dir='./torch_models',  # Custom directory
-                progress=True
+            model = resnet18(weights=weights).to(device).eval()
+        except Exception as e:
+            st.error(f"Vision model failed: {str(e)}")
+            st.stop()
+    
+    # Initialize EasyOCR
+    with st.spinner('🔍 Initializing OCR engine...'):
+        try:
+            os.makedirs("models", exist_ok=True)
+            reader = easyocr.Reader(
+                ['en'],
+                gpu=False,
+                download_enabled=True,
+                model_storage_directory='models',
+                recog_network='english_g2',
+                quantize=True
             )
         except Exception as e:
-            st.error(f"ResNet weights download failed: {str(e)}")
+            st.error(f"OCR failed: {str(e)}")
             st.stop()
 
-    # Initialize model with pre-downloaded weights
-    with st.spinner('Initializing vision model...'):
-        try:
-            model = resnet18(weights=None)
-            model.load_state_dict(model_path)
-            model = model.to(device).eval()
-        except Exception as e:
-            st.error(f"Model initialization failed: {str(e)}")
-            st.stop()
-
-# Initialize models at app start
-model, reader = load_models()
+    return model, reader
 
 # Streamlit UI with enhanced constraints
 st.title("TMKG Billboard Compliance Checker")
