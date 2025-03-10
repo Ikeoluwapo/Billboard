@@ -30,8 +30,13 @@ def _filter_torch_paths(module):
 
 caching._get_module_paths = _filter_torch_paths
 
-@st.cache_resource
+@st.cache_resource  # Keep this decorator!
 def load_models():
+    # Add these 2 lines at the start
+    torch._C._jit_set_profiling_mode(False)
+    torch._C._set_graph_executor_optimize(False)
+    
+    # Keep existing device setup
     device = torch.device('cpu')
     torch.set_default_device(device)
 
@@ -201,8 +206,28 @@ def analyze_brightness(image):
     return np.mean(hsv[:, :, 2]) / 255
 
 def extract_text(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    return " ".join([text[1] for text in reader.readtext(gray)])
+    try:
+        # Convert to grayscale and enhance
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Resize only if needed (for large billboards)
+        height, width = gray.shape
+        if max(height, width) > 1600:  # Downscale large images
+            scale = 1600 / max(height, width)
+            gray = cv2.resize(gray, None, fx=scale, fy=scale, 
+                            interpolation=cv2.INTER_AREA)
+        elif min(height, width) < 300:  # Upscale small text
+            scale = 300 / min(height, width)
+            gray = cv2.resize(gray, None, fx=scale, fy=scale,
+                            interpolation=cv2.INTER_CUBIC)
+        
+        # Add contrast enhancement
+        gray = cv2.convertScaleAbs(gray, alpha=1.5, beta=50)
+        
+        return " ".join([text[1] for text in reader.readtext(gray)])
+    except Exception as e:
+        st.error(f"OCR Error: {str(e)}")
+        return ""
 
 # ---------- Updated processing block ----------
 if uploaded_file is not None:
