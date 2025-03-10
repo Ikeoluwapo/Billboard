@@ -1,6 +1,7 @@
 import os
 os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"
-os.environ["TORCH_CUDA_VERSION"] = "None"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU detection
+os.environ["TORCH_CUDA_VERSION"] = "None"  # Prevent CUDA installs
 
 import streamlit as st
 import cv2
