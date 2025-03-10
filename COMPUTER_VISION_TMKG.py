@@ -1,16 +1,25 @@
 import asyncio
 import sys
 
+# Windows-specific event loop policy
 if sys.platform == "win32" and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-if not asyncio.get_event_loop().is_running():
-    asyncio.set_event_loop(asyncio.new_event_loop())
+# Safe event loop initialization
+try:
+    from asyncio import get_event_loop_policy
+    # Create new loop if needed
+    if not get_event_loop_policy().get_event_loop().is_running():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+except RuntimeError:
+    # Thread-safe fallback
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
+# Rest of your imports
 import os
-os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"  # Disable problematic watcher
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Explicitly disable GPU
-
+os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import streamlit as st
 import cv2
 import numpy as np
