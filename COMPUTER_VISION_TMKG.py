@@ -16,24 +16,34 @@ from torchvision.models import ResNet18_Weights
 
 @st.cache_resource
 def load_models():
-    # Explicit CPU enforcement
+    # Force CPU usage and prevent CUDA installation
     torch.set_default_device('cpu')
     
-    # Load ResNet
-    weights = ResNet18_Weights.IMAGENET1K_V1
-    model = resnet18(weights=weights)
-    model.eval()
+    try:
+        # Load ResNet
+        weights = ResNet18_Weights.IMAGENET1K_V1
+        model = resnet18(weights=weights)
+        model.eval()
+    except Exception as e:
+        st.error(f"Failed to load ResNet: {str(e)}")
+        st.stop()
 
-    # Load EasyOCR with explicit paths
-    os.makedirs("models", exist_ok=True)
-    reader = easyocr.Reader(
-        ['en'],
-        gpu=False,
-        download_enabled=True,
-        model_storage_directory='models',
-        download_dir='models'
-    )
-    return model, reader
+    # Initialize EasyOCR with explicit paths
+    try:
+        os.makedirs("models", exist_ok=True)  # Create model directory
+        reader = easyocr.Reader(
+            ['en'],
+            gpu=False,
+            download_enabled=True,
+            model_storage_directory='models',
+            download_dir='models'
+        )
+        return model, reader
+    except Exception as e:
+        st.error(f"Failed to initialize OCR: {str(e)}")
+        st.stop()
+
+model, reader = load_models()  # Initialize here
 
 # Streamlit UI with enhanced constraints
 st.title("TMKG Billboard Compliance Checker")
