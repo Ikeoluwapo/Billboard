@@ -1,47 +1,48 @@
 import os
-os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU detection
-os.environ["TORCH_CUDA_VERSION"] = "None"  # Prevent CUDA installs
+os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"  # Disable problematic watcher
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Explicitly disable GPU
 
 import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
 import torch
-from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
 import easyocr
-from torch.hub import download_url_to_file
-from torchvision.models import ResNet18_Weights
 
 @st.cache_resource
 def load_models():
-    # Force CPU usage
-    torch.set_default_device('cpu')
+    # Force CPU-only operations
+    device = torch.device('cpu')
+    torch.set_default_device(device)
     
-    try:
-        # Load ResNet
-        weights = ResNet18_Weights.IMAGENET1K_V1
-        model = resnet18(weights=weights)
-        model.eval()
-    except Exception as e:
-        st.error(f"Failed to load ResNet: {str(e)}")
-        st.stop()
+    # Initialize ResNet with progress
+    with st.spinner('Loading vision model...'):
+        try:
+            weights = ResNet18_Weights.IMAGENET1K_V1
+            model = resnet18(weights=weights).to(device).eval()
+        except Exception as e:
+            st.error(f"Model loading failed: {str(e)}")
+            st.stop()
 
-    # Initialize EasyOCR
-    try:
-        os.makedirs("models", exist_ok=True)
-        reader = easyocr.Reader(
-            ['en'],
-            gpu=False,
-            download_enabled=True,
-            model_storage_directory='models'  # Removed download_dir parameter
-        )
-        return model, reader
-    except Exception as e:
-        st.error(f"OCR Error: {str(e)}")
-        st.stop()
+# Initialize EasyOCR with progress
+    with st.spinner('Preparing OCR engine...'):
+        try:
+            os.makedirs("models", exist_ok=True)
+            reader = easyocr.Reader(
+                ['en'],
+                gpu=False,
+                download_enabled=True,
+                model_storage_directory='models',
+                recog_network='english_g2'  # Smaller model
+            )
+        except Exception as e:
+            st.error(f"OCR setup failed: {str(e)}")
+            st.stop()
 
+    return model, reader
+
+# Initialize models at app start
 model, reader = load_models()
 
 # Streamlit UI with enhanced constraints
@@ -190,7 +191,7 @@ def extract_text(image):
 if uploaded_file is not None:
     try:
         if uploaded_file.size > 5_000_000:
-            st.error("File too large! Max 5MB allowed")
+            st.error("File size exceeds 5MB limit")
             st.stop()
             
         image = Image.open(uploaded_file)
@@ -242,6 +243,6 @@ if uploaded_file is not None:
         else:
             st.error("❌ Non-Compliant")
             
-    except Exception as e:
-        st.error(f"Processing failed: {str(e)}")
+   except Exception as e:
+        st.error(f"Processing error: {str(e)}")
         st.stop()
