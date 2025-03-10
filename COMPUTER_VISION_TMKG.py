@@ -15,30 +15,24 @@ from torchvision.models import ResNet18_Weights
 
 @st.cache_resource
 def load_models():
-    # Force CPU-only installation
+    # Explicit CPU enforcement
     torch.set_default_device('cpu')
     
-    # Load ResNet with error handling
-    try:
-        weights = ResNet18_Weights.IMAGENET1K_V1
-        model = resnet18(weights=weights)
-        model.eval()
-    except Exception as e:
-        st.error(f"ResNet failed: {str(e)}")
-        st.stop()
+    # Load ResNet
+    weights = ResNet18_Weights.IMAGENET1K_V1
+    model = resnet18(weights=weights)
+    model.eval()
 
-    # Load EasyOCR with error handling
-    try:
-        reader = easyocr.Reader(
-            ['en'],
-            gpu=False,
-            download_enabled=True,
-            model_storage_directory='models'
-        )
-        return model, reader
-    except Exception as e:
-        st.error(f"OCR failed: {str(e)}")
-        st.stop()
+    # Load EasyOCR with explicit paths
+    os.makedirs("models", exist_ok=True)
+    reader = easyocr.Reader(
+        ['en'],
+        gpu=False,
+        download_enabled=True,
+        model_storage_directory='models',
+        download_dir='models'
+    )
+    return model, reader
 
 # Streamlit UI with enhanced constraints
 st.title("TMKG Billboard Compliance Checker")
