@@ -243,6 +243,6 @@ if uploaded_file is not None:
         else:
             st.error("❌ Non-Compliant")
             
-   except Exception as e:
-        st.error(f"Processing error: {str(e)}")
-        st.stop()
+       except Exception as e:
+            st.error(f"Processing error: {str(e)}")
+            st.stop()
