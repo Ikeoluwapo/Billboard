@@ -1,3 +1,7 @@
+import os
+os.environ["STREAMLIT_SERVER_ENABLE_FILE_WATCHER"] = "false"
+os.environ["TORCH_CUDA_VERSION"] = "None"
+
 import streamlit as st
 import cv2
 import numpy as np
@@ -14,24 +18,27 @@ def load_models():
     # Force CPU-only installation
     torch.set_default_device('cpu')
     
-    # Explicit weights handling
-    weights = ResNet18_Weights.IMAGENET1K_V1
+    # Load ResNet with error handling
     try:
-        download_url_to_file(weights.url, "resnet18.pth")  # Add this line
+        weights = ResNet18_Weights.IMAGENET1K_V1
+        model = resnet18(weights=weights)
+        model.eval()
     except Exception as e:
-        st.warning(f"Model download note: {str(e)}")
-    
-    model = resnet18(weights=weights)
-    model.eval()
+        st.error(f"ResNet failed: {str(e)}")
+        st.stop()
 
-    # Modified EasyOCR init
-    reader = easyocr.Reader(
-        ['en'],
-        gpu=False,
-        download_enabled=True,
-        model_storage_directory='models'
-    )
-    return model, reader
+    # Load EasyOCR with error handling
+    try:
+        reader = easyocr.Reader(
+            ['en'],
+            gpu=False,
+            download_enabled=True,
+            model_storage_directory='models'
+        )
+        return model, reader
+    except Exception as e:
+        st.error(f"OCR failed: {str(e)}")
+        st.stop()
 
 # Streamlit UI with enhanced constraints
 st.title("TMKG Billboard Compliance Checker")
