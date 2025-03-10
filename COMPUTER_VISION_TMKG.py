@@ -10,37 +10,41 @@ import torch
 from torchvision.models import resnet18, ResNet18_Weights
 import easyocr
 
+# Cache weights download for 24 hours
+@st.experimental_singleton
+def get_resnet_weights():
+    return ResNet18_Weights.IMAGENET1K_V1
+    
 @st.cache_resource
 def load_models():
-    # Force CPU-only operations
     device = torch.device('cpu')
     torch.set_default_device(device)
-    
-    # Initialize ResNet with progress
-    with st.spinner('Loading vision model...'):
-        try:
-            weights = ResNet18_Weights.IMAGENET1K_V1
-            model = resnet18(weights=weights).to(device).eval()
-        except Exception as e:
-            st.error(f"Model loading failed: {str(e)}")
-            st.stop()
 
-# Initialize EasyOCR with progress
-    with st.spinner('Preparing OCR engine...'):
+    # Pre-download ResNet weights
+    with st.spinner('Downloading vision model (1.2GB)...'):
         try:
-            os.makedirs("models", exist_ok=True)
-            reader = easyocr.Reader(
-                ['en'],
-                gpu=False,
-                download_enabled=True,
-                model_storage_directory='models',
-                recog_network='english_g2'  # Smaller model
+            # Get weights metadata
+            weights = ResNet18_Weights.IMAGENET1K_V1
+            
+            # Pre-load weights file explicitly
+            model_path = torch.hub.load_state_dict_from_url(
+                weights.url,
+                model_dir='./torch_models',  # Custom directory
+                progress=True
             )
         except Exception as e:
-            st.error(f"OCR setup failed: {str(e)}")
+            st.error(f"ResNet weights download failed: {str(e)}")
             st.stop()
 
-    return model, reader
+    # Initialize model with pre-downloaded weights
+    with st.spinner('Initializing vision model...'):
+        try:
+            model = resnet18(weights=None)
+            model.load_state_dict(model_path)
+            model = model.to(device).eval()
+        except Exception as e:
+            st.error(f"Model initialization failed: {str(e)}")
+            st.stop()
 
 # Initialize models at app start
 model, reader = load_models()
