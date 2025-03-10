@@ -30,10 +30,6 @@ def _filter_torch_paths(module):
 
 caching._get_module_paths = _filter_torch_paths
 
-# Cache weights download for 24 hours
-@st.cache_data(show_spinner=False, ttl=24*3600)  # Cache for 24 hours
-def get_resnet_weights():
-    
 @st.cache_resource
 def load_models():
     device = torch.device('cpu')
