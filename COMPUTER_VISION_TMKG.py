@@ -5,78 +5,82 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-if "use_easyocr" not in st.session_state:
-    st.session_state.use_easyocr = True  # Default to using EasyOCR
+# --------- TESSERACT SETUP ---------
+if "tesseract_path" in st.secrets:
+    pytesseract.pytesseract.tesseract_cmd = st.secrets["tesseract_path"]
+else:
+    st.warning("⚠️ Tesseract path not found in secrets. Using default system path.")
 
-# --------------- LOAD OCR MODEL (CACHE) ----------------
+# Initialize session variables
+if "use_easyocr" not in st.session_state:
+    st.session_state.use_easyocr = True
+if "ocr_reader" not in st.session_state:
+    st.session_state.ocr_reader = None
+
+# --------- LOAD OCR MODELS (CACHED) ---------
 @st.cache_resource
 def load_ocr():
     try:
         reader = easyocr.Reader(
             ['en'], gpu=False, download_enabled=False, model_storage_directory='models', 
-            detector=False, verbose=False
+            detector=True, verbose=False
         )
-        st.session_state.use_easyocr = True  # Default to EasyOCR
+        st.session_state.use_easyocr = True
     except Exception as e:
         st.warning(f"EasyOCR failed: {str(e)}. Switching to Tesseract OCR.")
-        st.session_state.use_easyocr = False  # Use Tesseract instead
-        reader = None  # No EasyOCR
-
+        st.session_state.use_easyocr = False
+        reader = None
     return reader
 
-# Load OCR once
-if "ocr_loaded" not in st.session_state:
-    st.session_state.ocr_loaded = True
+if st.session_state.ocr_reader is None:
     st.session_state.ocr_reader = load_ocr()
 
-# Unified OCR function (handles EasyOCR & Tesseract)
+# --------- TEXT EXTRACTION FUNCTION ---------
 def extract_text(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Try EasyOCR first
     if st.session_state.use_easyocr and st.session_state.ocr_reader:
         try:
             return " ".join([text[1] for text in st.session_state.ocr_reader.readtext(gray)])
         except Exception as e:
             st.warning(f"EasyOCR failed: {str(e)}. Falling back to Tesseract.")
-            st.session_state.use_easyocr = False  # Disable EasyOCR if it fails
 
-    # Fallback to Tesseract OCR
     try:
         return pytesseract.image_to_string(gray).strip()
     except Exception as e:
         st.error(f"Tesseract OCR failed: {str(e)}")
         return "OCR failed"
 
-# --------------- STREAMLIT UI ----------------
+# --------- STREAMLIT UI ---------
 st.title("TMKG Billboard Compliance Checker")
 st.write("Upload an image of a billboard to check compliance.")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-# Placeholder functions for missing implementations
+# Placeholder functions
 def detect_tears(image):
-    return image, "No", 0.0, "Stable", 1.0  # Debug Image, Torn Status, Confidence, Structure Status, Confidence
+    return image, "No", 0.0, "Stable", 1.0
 
 def detect_obstruction(image):
-    return image, "No", 0.0  # Obstruction Mask, Obstructed Status, Obstruct Ratio
+    return image, "No", 0.0
 
 def check_alignment(image):
-    return 1.0  # Alignment Confidence
+    return 1.0
 
 def analyze_brightness(image):
-    return 1.0  # Brightness Score
+    return 1.0
 
-# ------------------- IMAGE PROCESSING ------------------
+# --------- IMAGE PROCESSING ---------
 if uploaded_file is not None:
     try:
-        # File size check (return warning instead of stopping execution)
         if uploaded_file.size > 5_000_000:
-            st.warning("⚠️ File size exceeds 5MB. Consider using a smaller image.")
+            st.warning("⚠️ File is too large! Consider resizing.")
         else:
-            # Process the image
+            MAX_SIZE = (1000, 1000)
             image = Image.open(uploaded_file)
-            st.image(image, caption='Uploaded Image', use_container_width=True)
+            image.thumbnail(MAX_SIZE)
+
+            st.image(image, caption="Uploaded Image", use_container_width=True)
             
             image_cv = np.array(image)
             image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
@@ -88,11 +92,10 @@ if uploaded_file is not None:
                 brightness = analyze_brightness(image_cv)
                 text_content = extract_text(image_cv)
 
-            # ------------------- DISPLAY RESULTS ------------------
+            # --------- DISPLAY RESULTS ---------
             col1, col2 = st.columns(2)
             with col1:
-                st.image(tear_debug, 
-                         caption='Billboard Analysis: Green=Boundary, Blue=Pole, Yellow=Structure Status')
+                st.image(tear_debug, caption='Tear Analysis')
                 st.image(obstruct_mask, caption=f'Obstruction: {obstructed} ({obstruct_ratio:.1%})')
 
             with col2:
@@ -102,7 +105,7 @@ if uploaded_file is not None:
                 st.metric("Brightness", f"{brightness:.0%} of Optimal")
                 st.write("**Extracted Text:**", text_content if text_content else "No text found")
 
-            # ------------------- COMPLIANCE SCORING ------------------
+            # --------- COMPLIANCE SCORE ---------
             penalties = {
                 'Tear': tear_conf * 15,
                 'Obstruction': 10 if obstructed == "Yes" else 0,
@@ -114,12 +117,11 @@ if uploaded_file is not None:
             compliance_score = max(0, 100 - sum(penalties.values()))
             st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
             st.progress(float(compliance_score) / 100)
-            
+
             with st.expander("🔎 Penalty Breakdown"):
                 for k, v in penalties.items():
                     st.write(f"{k}: -{v:.1f} pts")
-            
-            # ------------------- FINAL COMPLIANCE RESULT ------------------
+
             if compliance_score >= 80 and text_content:
                 st.success("✅ Compliant Billboard")
             elif compliance_score >= 50:
