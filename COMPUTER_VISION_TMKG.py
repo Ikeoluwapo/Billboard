@@ -79,9 +79,20 @@ if uploaded_file is not None:
             st.metric("Alignment", f"{align_conf:.0%} Confidence")
             st.metric("Brightness", f"{brightness:.0%} of Optimal")
         
-        compliance_score = max(0, 100 - (10 if obstructed == "Yes" else 0))
+        penalties = {
+            'Tear': 15 if torn == "Yes" else 0,
+            'Obstruction': 10 if obstructed == "Yes" else 0,
+            'Misalignment': (1 - align_conf) * 10,
+            'Low Brightness': max(0, (0.4 - brightness)) * 15
+        }
+        
+        compliance_score = max(0, 100 - sum(penalties.values()))
         st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
         st.progress(float(compliance_score) / 100)
+        
+        with st.expander("Penalty Breakdown"):
+            for k, v in penalties.items():
+                st.write(f"{k}: -{v:.1f} pts")
         
         if compliance_score >= 80:
             st.success("✅ Compliant Billboard")
