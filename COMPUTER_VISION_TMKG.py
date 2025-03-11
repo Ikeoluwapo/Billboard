@@ -8,20 +8,22 @@ from torchvision.models import resnet18
 import concurrent.futures
 import easyocr
 
+import easyocr
+import concurrent.futures
+
 reader = easyocr.Reader(['en'])
 
 def extract_text_with_timeout(image, timeout=5):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
+    """Extracts text from the image using EasyOCR with a timeout."""
     def ocr_task():
-        return " ".join([text[1] for text in reader.readtext(gray)])
+        return " ".join([text[1] for text in reader.readtext(image)])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(ocr_task)
         try:
             return future.result(timeout=timeout)
         except concurrent.futures.TimeoutError:
-            return "OCR timed out"
+            return "OCR timed out: Could not extract text in time."
         except Exception as e:
             return f"OCR error: {str(e)}"
 
