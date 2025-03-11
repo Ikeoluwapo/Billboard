@@ -1,5 +1,4 @@
 import pytesseract
-import easyocr
 import cv2
 import numpy as np
 import streamlit as st
@@ -12,11 +11,14 @@ try:
 except KeyError:
     st.warning("⚠️ Tesseract path not found in secrets. Using default system path.")
 
-# Initialize session variables
-if "use_easyocr" not in st.session_state:
-    st.session_state.use_easyocr = True
-if "ocr_reader" not in st.session_state:
-    st.session_state.ocr_reader = None
+def extract_text(image):
+    try:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        text = pytesseract.image_to_string(gray).strip()
+        return text if text else "No text found"
+    except Exception as e:
+        st.error(f"❌ Tesseract OCR failed: {str(e)}")
+        return "OCR failed"
 
 # --------- LOAD OCR MODELS (CACHED) ---------
 @st.cache_resource
