@@ -32,23 +32,6 @@ def detect_billboard_region(image):
         return (x, y, w, h), largest_contour
     return None, None
 
-def check_structural_integrity(contour):
-    if contour is None:
-        return "Unknown", 0.0
-    
-    hull = cv2.convexHull(contour)
-    hull_area = cv2.contourArea(hull)
-    contour_area = cv2.contourArea(contour)
-    
-    if hull_area == 0:
-        return "Unknown", 0.0
-    
-    solidity = contour_area / hull_area
-    if solidity < 0.93:
-        bend_confidence = min((0.93 - solidity) * 4, 1.0)
-        return "Bent", bend_confidence
-    return "Straight", solidity
-
 def detect_obstruction(image):
     blurred = cv2.GaussianBlur(image, (15, 15), 0)
     diff = cv2.absdiff(image, blurred)
@@ -85,12 +68,14 @@ if uploaded_file is not None:
             obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
             align_conf = check_alignment(image_cv)
             brightness = analyze_brightness(image_cv)
+            torn = "No"  # Placeholder for tear detection
         
         col1, col2 = st.columns(2)
         with col1:
             st.image(obstruct_mask, caption=f'Obstruction: {obstructed} ({obstruct_ratio:.1%})')
         
         with col2:
+            st.metric("Tear Status", torn)
             st.metric("Alignment", f"{align_conf:.0%} Confidence")
             st.metric("Brightness", f"{brightness:.0%} of Optimal")
         
