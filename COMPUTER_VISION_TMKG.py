@@ -5,13 +5,10 @@ from PIL import Image, UnidentifiedImageError
 import torch
 from torchvision import transforms
 from torchvision.models import resnet18
-import easyocr
-import concurrent.futures
 
 # Load models and initialize components
 model = resnet18(pretrained=True)
 model.eval()
-reader = easyocr.Reader(['en'])
 
 # Streamlit UI setup
 st.title("TMKG Billboard Compliance Checker")
@@ -59,40 +56,19 @@ def analyze_brightness(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     return np.mean(hsv[:, :, 2]) / 255
 
-def extract_text_with_timeout(image, timeout=5):
-    def ocr_task():
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        return " ".join([text[1] for text in reader.readtext(gray_image)])
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(ocr_task)
-        try:
-            return future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            return "OCR timed out: Could not extract text in time."
-        except Exception as e:
-            return f"OCR error: {str(e)}"
-
 if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file)
         st.image(image, caption='Uploaded Image', use_container_width=True)
         
         image_cv = np.array(image)
-        
-        if len(image_cv.shape) == 2:
-            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_GRAY2BGR)
-        elif image_cv.shape[2] == 4:
-            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGBA2BGR)
-        else:
-            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+        image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
         
         with st.spinner('Analyzing...'):
             obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
             align_conf = check_alignment(image_cv)
             brightness = analyze_brightness(image_cv)
             torn = "No"  # Placeholder for tear detection
-            text_content = extract_text_with_timeout(image_cv, timeout=5)
         
         col1, col2 = st.columns(2)
         with col1:
@@ -107,19 +83,12 @@ if uploaded_file is not None:
             'Tear': 15 if torn == "Yes" else 0,
             'Obstruction': 10 if obstructed == "Yes" else 0,
             'Misalignment': (1 - align_conf) * 10,
-            'Low Brightness': max(0, (0.4 - brightness)) * 15,
-            'Missing Text': 10 if text_content.strip() == "" else 0
+            'Low Brightness': max(0, (0.4 - brightness)) * 15
         }
         
         compliance_score = max(0, 100 - sum(penalties.values()))
-        if torn == "Yes" or obstructed == "Yes" or align_conf < 1 or brightness < 0.4 or text_content.strip() == "":
-            compliance_score = min(compliance_score, 99)
-        
         st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
         st.progress(float(compliance_score) / 100)
-        
-        st.subheader("Extracted Billboard Text")
-        st.write(text_content)
         
         with st.expander("Penalty Breakdown"):
             for k, v in penalties.items():
@@ -136,3 +105,4 @@ if uploaded_file is not None:
         st.error("Invalid image file. Please upload a valid image.")
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
+
