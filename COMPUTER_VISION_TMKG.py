@@ -19,14 +19,14 @@ from PIL import Image
  #   st.warning("⚠️ Tesseract path is missing or invalid. Using system default.")
 
 # --------- TEXT EXTRACTION FUNCTION ---------
-def extract_text(image):
-    try:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        text = pytesseract.image_to_string(gray).strip()
-        return text if text else "No text found"
-    except Exception as e:
-        st.error(f"❌ Tesseract OCR failed: {str(e)}")
-        return "OCR failed"
+#def extract_text(image):
+ #   try:
+  #      gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+   #     text = pytesseract.image_to_string(gray).strip()
+    #    return text if text else "No text found"
+    #except Exception as e:
+     #   st.error(f"❌ Tesseract OCR failed: {str(e)}")
+      #  return "OCR failed"
 
 # --------- STREAMLIT UI ---------
 st.title("TMKG Billboard Compliance Checker")
