@@ -1,7 +1,7 @@
 import streamlit as st
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import torch
 from torchvision import transforms
 from torchvision.models import resnet18
@@ -74,25 +74,38 @@ def analyze_brightness(image):
     return np.mean(hsv[:, :, 2]) / 255
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image', use_container_width=True)
+    try:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Uploaded Image', use_container_width=True)
+        
+        image_cv = np.array(image)
+        image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+        
+        with st.spinner('Analyzing...'):
+            obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
+            align_conf = check_alignment(image_cv)
+            brightness = analyze_brightness(image_cv)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image(obstruct_mask, caption=f'Obstruction: {obstructed} ({obstruct_ratio:.1%})')
+        
+        with col2:
+            st.metric("Alignment", f"{align_conf:.0%} Confidence")
+            st.metric("Brightness", f"{brightness:.0%} of Optimal")
+        
+        compliance_score = max(0, 100 - (10 if obstructed == "Yes" else 0))
+        st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
+        st.progress(float(compliance_score) / 100)
+        
+        if compliance_score >= 80:
+            st.success("✅ Compliant Billboard")
+        elif compliance_score >= 50:
+            st.warning("⚠️ Needs Improvements")
+        else:
+            st.error("❌ Non-Compliant")
     
-    image_cv = np.array(image)
-    image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
-    
-    with st.spinner('Analyzing...'):
-        obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
-        align_conf = check_alignment(image_cv)
-        brightness = analyze_brightness(image_cv)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(obstruct_mask, caption=f'Obstruction: {obstructed} ({obstruct_ratio:.1%})')
-    
-    with col2:
-        st.metric("Alignment", f"{align_conf:.0%} Confidence")
-        st.metric("Brightness", f"{brightness:.0%} of Optimal")
-    
-    compliance_score = max(0, 100 - (10 if obstructed == "Yes" else 0))
-    st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
-    st.progress(float(compliance_score) / 100)
+    except UnidentifiedImageError:
+        st.error("Invalid image file. Please upload a valid image.")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
