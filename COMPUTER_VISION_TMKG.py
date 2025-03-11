@@ -1,22 +1,22 @@
 import os
 import cv2
-import pytesseract
+#import pytesseract
 import streamlit as st
 import numpy as np
 from PIL import Image
 
 # Get Tesseract path from Streamlit secrets
-try:
-    TESSERACT_PATH = st.secrets["general"]["tesseract_cmd"]
-except KeyError:
-    TESSERACT_PATH = None
+#try:
+ #   TESSERACT_PATH = st.secrets["general"]["tesseract_cmd"]
+#except KeyError:
+ #   TESSERACT_PATH = None
 
 # Check if the path is valid
-if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
-    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-    st.success(f"✅ Using Tesseract at: {TESSERACT_PATH}")
-else:
-    st.warning("⚠️ Tesseract path is missing or invalid. Using system default.")
+#if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
+ #   pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+  #  st.success(f"✅ Using Tesseract at: {TESSERACT_PATH}")
+#else:
+ #   st.warning("⚠️ Tesseract path is missing or invalid. Using system default.")
 
 # --------- TEXT EXTRACTION FUNCTION ---------
 def extract_text(image):
