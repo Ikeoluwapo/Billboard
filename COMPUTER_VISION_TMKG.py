@@ -6,7 +6,7 @@ import streamlit as st
 from PIL import Image
 
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\Users\HomePC\Downloads\tesseract.exe"
 
 # --------- TESSERACT SETUP ---------
 if "tesseract_path" in st.secrets:
