@@ -5,6 +5,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 st.write(st.secrets)
 
 # --------- TESSERACT SETUP ---------
