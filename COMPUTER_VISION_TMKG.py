@@ -18,21 +18,6 @@ st.title("TMKG Billboard Compliance Checker")
 st.write("Upload an image of a billboard to check compliance.")
 uploaded_file = st.file_uploader("Choose an image...")
 
-def extract_text_with_timeout(image, timeout=5):
-    def ocr_task():
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
-        return " ".join([text[1] for text in reader.readtext(gray_image)])
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(ocr_task)
-        try:
-            return future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            return "OCR timed out: Could not extract text in time."
-        except Exception as e:
-            return f"OCR error: {str(e)}"
-
-
 def detect_billboard_region(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     lower_white = np.array([0, 0, 200])
@@ -59,7 +44,7 @@ def detect_obstruction(image):
     return thresholded, "Yes" if obstruction_ratio > 0.05 else "No", obstruction_ratio
 
 def check_alignment(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
     
@@ -76,7 +61,8 @@ def analyze_brightness(image):
 
 def extract_text_with_timeout(image, timeout=5):
     def ocr_task():
-        return " ".join([text[1] for text in reader.readtext(image)])
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        return " ".join([text[1] for text in reader.readtext(gray_image)])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(ocr_task)
@@ -93,7 +79,13 @@ if uploaded_file is not None:
         st.image(image, caption='Uploaded Image', use_container_width=True)
         
         image_cv = np.array(image)
-        image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+        
+        if len(image_cv.shape) == 2:
+            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_GRAY2BGR)
+        elif image_cv.shape[2] == 4:
+            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGBA2BGR)
+        else:
+            image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
         
         with st.spinner('Analyzing...'):
             obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
