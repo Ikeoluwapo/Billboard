@@ -60,7 +60,8 @@ def analyze_brightness(image):
     return 1.0  # Brightness Score
 
 def extract_text(image):
-    return "Sample Billboard Text"  # Placeholder text output
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return " ".join([text[1] for text in reader.readtext(gray)])
 
 if uploaded_file is not None:
     try:
