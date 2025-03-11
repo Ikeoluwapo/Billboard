@@ -1,6 +1,9 @@
 import os
+import cv2
 import pytesseract
 import streamlit as st
+import numpy as np
+from PIL import Image
 
 # Get Tesseract path from Streamlit secrets
 try:
@@ -52,6 +55,7 @@ if uploaded_file is not None:
         else:
             MAX_SIZE = (1000, 1000)
             image = Image.open(uploaded_file)
+            image = image.convert("RGB")  # Ensure RGB mode before conversion
             image.thumbnail(MAX_SIZE)
 
             st.image(image, caption="Uploaded Image", use_container_width=True)
@@ -84,7 +88,7 @@ if uploaded_file is not None:
                 'Tear': tear_conf * 15,
                 'Obstruction': 10 if obstructed == "Yes" else 0,
                 'Misalignment': (1 - align_conf) * 10,
-                'Low Brightness': max(0, (0.4 - brightness)) * 15,
+                'Low Brightness': max(0, (0.4 - max(0.001, brightness))) * 15,
                 'Structural Damage': structure_conf * 20 if structure_status == "Bent" else 0
             }
             
