@@ -5,6 +5,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
+st.write(st.secrets)
+
 # --------- TESSERACT SETUP ---------
 if "tesseract_path" in st.secrets:
     pytesseract.pytesseract.tesseract_cmd = st.secrets["tesseract_path"]
