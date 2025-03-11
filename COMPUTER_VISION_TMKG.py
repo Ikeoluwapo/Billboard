@@ -1,32 +1,8 @@
 import os
 import cv2
-#import pytesseract
 import streamlit as st
 import numpy as np
 from PIL import Image
-
-# Get Tesseract path from Streamlit secrets
-#try:
- #   TESSERACT_PATH = st.secrets["general"]["tesseract_cmd"]
-#except KeyError:
- #   TESSERACT_PATH = None
-
-# Check if the path is valid
-#if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
- #   pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-  #  st.success(f"✅ Using Tesseract at: {TESSERACT_PATH}")
-#else:
- #   st.warning("⚠️ Tesseract path is missing or invalid. Using system default.")
-
-# --------- TEXT EXTRACTION FUNCTION ---------
-#def extract_text(image):
- #   try:
-  #      gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-   #     text = pytesseract.image_to_string(gray).strip()
-    #    return text if text else "No text found"
-    #except Exception as e:
-     #   st.error(f"❌ Tesseract OCR failed: {str(e)}")
-      #  return "OCR failed"
 
 # --------- STREAMLIT UI ---------
 st.title("TMKG Billboard Compliance Checker")
@@ -68,7 +44,7 @@ if uploaded_file is not None:
                 obstruct_mask, obstructed, obstruct_ratio = detect_obstruction(image_cv)
                 align_conf = check_alignment(image_cv)
                 brightness = analyze_brightness(image_cv)
-                text_content = extract_text(image_cv)
+                # text_content = extract_text(image_cv)  # ❌ Commented out OCR
 
             # --------- DISPLAY RESULTS ---------
             col1, col2 = st.columns(2)
@@ -81,7 +57,7 @@ if uploaded_file is not None:
                 st.metric("Structural Integrity", f"{structure_status} ({structure_conf:.0%} Confidence)")
                 st.metric("Alignment", f"{align_conf:.0%} Confidence")
                 st.metric("Brightness", f"{brightness:.0%} of Optimal")
-                st.write("**Extracted Text:**", text_content)
+                # st.write("**Extracted Text:**", text_content)  # ❌ Commented out OCR display
 
             # --------- COMPLIANCE SCORE ---------
             penalties = {
@@ -100,7 +76,7 @@ if uploaded_file is not None:
                 for k, v in penalties.items():
                     st.write(f"{k}: -{v:.1f} pts")
 
-            if compliance_score >= 80 and text_content:
+            if compliance_score >= 80:  # Removed OCR condition
                 st.success("✅ Compliant Billboard")
             elif compliance_score >= 50:
                 st.warning("⚠️ Needs Improvements")
