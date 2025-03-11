@@ -5,19 +5,11 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-# Load Tesseract path from secrets
-tesseract_path = st.secrets["general"]["tesseract_cmd"]
-pytesseract.pytesseract.tesseract_cmd = tesseract_path
-
-# Test if Tesseract is working
-print("Using Tesseract at:", pytesseract.pytesseract.tesseract_cmd)
-
-st.write(st.secrets)
-
-# --------- TESSERACT SETUP ---------
-if "tesseract_path" in st.secrets:
-    pytesseract.pytesseract.tesseract_cmd = st.secrets["tesseract_path"]
-else:
+try:
+    tesseract_path = st.secrets["general"]["tesseract_cmd"]
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    st.success(f"Using Tesseract at: {tesseract_path}")
+except KeyError:
     st.warning("⚠️ Tesseract path not found in secrets. Using default system path.")
 
 # Initialize session variables
