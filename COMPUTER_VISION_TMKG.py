@@ -112,6 +112,9 @@ if uploaded_file is not None:
         }
         
         compliance_score = max(0, 100 - sum(penalties.values()))
+        if torn == "Yes" or obstructed == "Yes" or align_conf < 1 or brightness < 0.4 or text_content.strip() == "":
+            compliance_score = min(compliance_score, 99)
+        
         st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
         st.progress(float(compliance_score) / 100)
         
