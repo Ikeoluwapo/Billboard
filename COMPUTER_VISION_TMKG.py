@@ -4,13 +4,15 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-# --------- TESSERACT SETUP ---------
-try:
-    tesseract_path = st.secrets["general"]["tesseract_cmd"]
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
-    st.success(f"✅ Using Tesseract at: {tesseract_path}")
-except KeyError:
-    st.warning("⚠️ Tesseract path not found in secrets. Using default system path.")
+# Set Tesseract path manually (Ensure this matches your installed location)
+TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
+# Verify Tesseract Installation
+if not os.path.exists(TESSERACT_PATH):
+    raise FileNotFoundError(f"Tesseract not found at: {TESSERACT_PATH}")
+
+print("✅ Tesseract Path Set:", pytesseract.pytesseract.tesseract_cmd)
 
 # --------- TEXT EXTRACTION FUNCTION ---------
 def extract_text(image):
