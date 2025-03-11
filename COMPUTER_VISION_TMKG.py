@@ -5,6 +5,9 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
+if "use_easyocr" not in st.session_state:
+    st.session_state.use_easyocr = True  # Default to using EasyOCR
+
 # --------------- LOAD OCR MODEL (CACHE) ----------------
 @st.cache_resource
 def load_ocr():
