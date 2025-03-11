@@ -4,13 +4,15 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
+# --------- TESSERACT SETUP ---------
 try:
     tesseract_path = st.secrets["general"]["tesseract_cmd"]
     pytesseract.pytesseract.tesseract_cmd = tesseract_path
-    st.success(f"Using Tesseract at: {tesseract_path}")
+    st.success(f"✅ Using Tesseract at: {tesseract_path}")
 except KeyError:
     st.warning("⚠️ Tesseract path not found in secrets. Using default system path.")
 
+# --------- TEXT EXTRACTION FUNCTION ---------
 def extract_text(image):
     try:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -18,40 +20,6 @@ def extract_text(image):
         return text if text else "No text found"
     except Exception as e:
         st.error(f"❌ Tesseract OCR failed: {str(e)}")
-        return "OCR failed"
-
-# --------- LOAD OCR MODELS (CACHED) ---------
-@st.cache_resource
-def load_ocr():
-    try:
-        reader = easyocr.Reader(
-            ['en'], gpu=False, download_enabled=False, model_storage_directory='models', 
-            detector=True, verbose=False
-        )
-        st.session_state.use_easyocr = True
-    except Exception as e:
-        st.warning(f"EasyOCR failed: {str(e)}. Switching to Tesseract OCR.")
-        st.session_state.use_easyocr = False
-        reader = None
-    return reader
-
-if st.session_state.ocr_reader is None:
-    st.session_state.ocr_reader = load_ocr()
-
-# --------- TEXT EXTRACTION FUNCTION ---------
-def extract_text(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    if st.session_state.use_easyocr and st.session_state.ocr_reader:
-        try:
-            return " ".join([text[1] for text in st.session_state.ocr_reader.readtext(gray)])
-        except Exception as e:
-            st.warning(f"EasyOCR failed: {str(e)}. Falling back to Tesseract.")
-
-    try:
-        return pytesseract.image_to_string(gray).strip()
-    except Exception as e:
-        st.error(f"Tesseract OCR failed: {str(e)}")
         return "OCR failed"
 
 # --------- STREAMLIT UI ---------
@@ -106,7 +74,7 @@ if uploaded_file is not None:
                 st.metric("Structural Integrity", f"{structure_status} ({structure_conf:.0%} Confidence)")
                 st.metric("Alignment", f"{align_conf:.0%} Confidence")
                 st.metric("Brightness", f"{brightness:.0%} of Optimal")
-                st.write("**Extracted Text:**", text_content if text_content else "No text found")
+                st.write("**Extracted Text:**", text_content)
 
             # --------- COMPLIANCE SCORE ---------
             penalties = {
