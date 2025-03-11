@@ -5,6 +5,26 @@ from PIL import Image, UnidentifiedImageError
 import torch
 from torchvision import transforms
 from torchvision.models import resnet18
+import concurrent.futures
+import easyocr
+
+reader = easyocr.Reader(['en'])
+
+def extract_text_with_timeout(image, timeout=5):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    def ocr_task():
+        return " ".join([text[1] for text in reader.readtext(gray)])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(ocr_task)
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            return "OCR timed out"
+        except Exception as e:
+            return f"OCR error: {str(e)}"
+
 
 # Load models and initialize components
 model = resnet18(pretrained=True)
