@@ -5,32 +5,13 @@ from PIL import Image, UnidentifiedImageError
 import torch
 from torchvision import transforms
 from torchvision.models import resnet18
-import concurrent.futures
-import easyocr
-
 import easyocr
 import concurrent.futures
-
-reader = easyocr.Reader(['en'])
-
-def extract_text_with_timeout(image, timeout=5):
-    """Extracts text from the image using EasyOCR with a timeout."""
-    def ocr_task():
-        return " ".join([text[1] for text in reader.readtext(image)])
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(ocr_task)
-        try:
-            return future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            return "OCR timed out: Could not extract text in time."
-        except Exception as e:
-            return f"OCR error: {str(e)}"
-
 
 # Load models and initialize components
 model = resnet18(pretrained=True)
 model.eval()
+reader = easyocr.Reader(['en'])
 
 # Streamlit UI setup
 st.title("TMKG Billboard Compliance Checker")
@@ -63,7 +44,7 @@ def detect_obstruction(image):
     return thresholded, "Yes" if obstruction_ratio > 0.05 else "No", obstruction_ratio
 
 def check_alignment(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
     
@@ -78,6 +59,19 @@ def analyze_brightness(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     return np.mean(hsv[:, :, 2]) / 255
 
+def extract_text_with_timeout(image, timeout=5):
+    def ocr_task():
+        return " ".join([text[1] for text in reader.readtext(image)])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(ocr_task)
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            return "OCR timed out: Could not extract text in time."
+        except Exception as e:
+            return f"OCR error: {str(e)}"
+
 if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file)
@@ -91,6 +85,7 @@ if uploaded_file is not None:
             align_conf = check_alignment(image_cv)
             brightness = analyze_brightness(image_cv)
             torn = "No"  # Placeholder for tear detection
+            text_content = extract_text_with_timeout(image_cv, timeout=5)
         
         col1, col2 = st.columns(2)
         with col1:
@@ -105,12 +100,16 @@ if uploaded_file is not None:
             'Tear': 15 if torn == "Yes" else 0,
             'Obstruction': 10 if obstructed == "Yes" else 0,
             'Misalignment': (1 - align_conf) * 10,
-            'Low Brightness': max(0, (0.4 - brightness)) * 15
+            'Low Brightness': max(0, (0.4 - brightness)) * 15,
+            'Missing Text': 10 if text_content.strip() == "" else 0
         }
         
         compliance_score = max(0, 100 - sum(penalties.values()))
         st.subheader(f"Compliance Score: {compliance_score:.0f}/100")
         st.progress(float(compliance_score) / 100)
+        
+        st.subheader("Extracted Billboard Text")
+        st.write(text_content)
         
         with st.expander("Penalty Breakdown"):
             for k, v in penalties.items():
