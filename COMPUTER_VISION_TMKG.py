@@ -27,19 +27,20 @@ def load_models():
             st.stop()
     
     # Initialize EasyOCR reader
-    with st.spinner('🔍 Initializing OCR engine...'):
-        try:
-            reader = easyocr.Reader(
-                ['en'], gpu=False, download_enabled=True, model_storage_directory='models'
-            )
-        except Exception as e:
-            st.error(f"OCR failed: {str(e)}")
-            st.stop()
-
-    return model, reader
-
-# Load the models
-model, reader = load_models()
+    # Initialize EasyOCR reader (Lightweight Version)
+with st.spinner('🔍 Initializing OCR engine...'):
+    try:
+        reader = easyocr.Reader(
+            ['en'], 
+            gpu=False, 
+            download_enabled=False,  # Prevent unnecessary downloads
+            model_storage_directory='models',  
+            detector=False,  # Disables text detection, making it faster
+            verbose=False  # Prevents excessive logging
+        )
+    except Exception as e:
+        st.error(f"OCR failed: {str(e)}")
+        st.stop()
 
 st.title("TMKG Billboard Compliance Checker")
 st.write("Upload an image of a billboard to check compliance.")
