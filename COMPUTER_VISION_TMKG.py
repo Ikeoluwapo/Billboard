@@ -5,7 +5,12 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Load Tesseract path from secrets
+tesseract_path = st.secrets["general"]["tesseract_cmd"]
+pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
+# Test if Tesseract is working
+print("Using Tesseract at:", pytesseract.pytesseract.tesseract_cmd)
 
 st.write(st.secrets)
 
